@@ -16,14 +16,13 @@ local titleBtn = Instance.new("TextButton")
 titleBtn.Size = UDim2.new(0,200,0,25)
 titleBtn.Position = UDim2.new(0.5,-100,0,5)
 titleBtn.BackgroundColor3 = Color3.fromRGB(35,35,35)
-titleBtn.Text = "Rexz Hub 100% Free"
+titleBtn.Text = "Rexz Hub Information"
 titleBtn.TextColor3 = Color3.fromRGB(255,0,0)
 titleBtn.Font = Enum.Font.GothamBold
 titleBtn.TextSize = 16
 titleBtn.Parent = gui
 Instance.new("UICorner",titleBtn)
 
--- ABOUT PANEL
 local panel = Instance.new("Frame")
 panel.Size = UDim2.new(0,250,0,140)
 panel.Position = UDim2.new(0.5,-125,0,35)
@@ -43,7 +42,6 @@ text.TextWrapped = true
 text.Text = "About: Script Rexz Hub\nCreated By Rexz\nFitur Baru Coming Soon"
 text.Parent = panel
 
--- QUIZ BUTTON
 local quizBtn = Instance.new("TextButton")
 quizBtn.Size = UDim2.new(0.8,0,0,30)
 quizBtn.Position = UDim2.new(0.1,0,0.65,0)
@@ -55,8 +53,7 @@ quizBtn.TextSize = 14
 quizBtn.Parent = panel
 Instance.new("UICorner",quizBtn)
 
--- PANEL TOGGLE
-local open = false
+local open=false
 titleBtn.MouseButton1Click:Connect(function()
 open = not open
 panel.Visible = open
@@ -71,12 +68,56 @@ quizGui.ResetOnSpawn = false
 quizGui.Parent = game.CoreGui
 
 local quizPanel = Instance.new("Frame")
-quizPanel.Size = UDim2.new(0,250,0,180)
-quizPanel.Position = UDim2.new(0.5,-125,0,190)
+quizPanel.Size = UDim2.new(0,260,0,210)
+quizPanel.Position = UDim2.new(0.5,-130,0,200)
 quizPanel.BackgroundColor3 = Color3.fromRGB(20,20,20)
 quizPanel.Visible = false
 quizPanel.Parent = quizGui
 Instance.new("UICorner",quizPanel)
+
+-- DRAG SYSTEM
+local UIS = game:GetService("UserInputService")
+local dragging,dragInput,dragStart,startPos
+
+local function update(input)
+local delta = input.Position - dragStart
+quizPanel.Position = UDim2.new(
+startPos.X.Scale,
+startPos.X.Offset + delta.X,
+startPos.Y.Scale,
+startPos.Y.Offset + delta.Y
+)
+end
+
+quizPanel.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1
+or input.UserInputType == Enum.UserInputType.Touch then
+
+dragging = true
+dragStart = input.Position
+startPos = quizPanel.Position
+
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+dragging = false
+end
+end)
+
+end
+end)
+
+quizPanel.InputChanged:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseMovement
+or input.UserInputType == Enum.UserInputType.Touch then
+dragInput = input
+end
+end)
+
+UIS.InputChanged:Connect(function(input)
+if input == dragInput and dragging then
+update(input)
+end
+end)
 
 -- QUESTION
 local quizText = Instance.new("TextLabel")
@@ -105,23 +146,36 @@ scoreLabel.TextSize = 14
 scoreLabel.Text = "Score: 0 | Streak: 0"
 scoreLabel.Parent = quizPanel
 
--- ANSWER BUTTONS
-local A = Instance.new("TextButton")
-A.Size = UDim2.new(0.9,0,0,25)
-A.Position = UDim2.new(0.05,0,0,85)
-A.Parent = quizPanel
+-- PROGRESS
+local progress = Instance.new("TextLabel")
+progress.Size = UDim2.new(1,-10,0,20)
+progress.Position = UDim2.new(0,5,0,80)
+progress.BackgroundTransparency = 1
+progress.TextColor3 = Color3.fromRGB(255,255,0)
+progress.Font = Enum.Font.GothamBold
+progress.TextSize = 14
+progress.Text = "Quiz 1 / 100"
+progress.Parent = quizPanel
 
-local B = Instance.new("TextButton")
-B.Size = UDim2.new(0.9,0,0,25)
-B.Position = UDim2.new(0.05,0,0,115)
-B.Parent = quizPanel
+-- ANSWERS
+local function makeBtn(y)
+local b = Instance.new("TextButton")
+b.Size = UDim2.new(0.9,0,0,25)
+b.Position = UDim2.new(0.05,0,0,y)
+b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+b.TextColor3 = Color3.new(1,1,1)
+b.Font = Enum.Font.GothamBold
+b.TextSize = 14
+b.Parent = quizPanel
+Instance.new("UICorner",b)
+return b
+end
 
-local C = Instance.new("TextButton")
-C.Size = UDim2.new(0.9,0,0,25)
-C.Position = UDim2.new(0.05,0,0,145)
-C.Parent = quizPanel
+local A = makeBtn(110)
+local B = makeBtn(140)
+local C = makeBtn(170)
 
--- VICTORY SCREEN
+-- VICTORY
 local victory = Instance.new("Frame")
 victory.Size = UDim2.new(0.4,0,0.3,0)
 victory.Position = UDim2.new(0.3,0,0.35,0)
@@ -217,10 +271,6 @@ local questions = {
 {q="25 : 5 = ?",a="4",b="5",c="6",correct="B"},
 {q="Ibukota Kanada?",a="Toronto",b="Ottawa",c="Vancouver",correct="B"},
 {q="Hewan raja hutan?",a="Singa",b="Harimau",c="Serigala",correct="A"},
-
--- TAMBAHKAN DISINI
--- {q="",a="",b="",c="",correct="A"},
-
 }
 
 local current
@@ -229,11 +279,12 @@ local function loadQuestion()
 
 current = questions[math.random(1,#questions)]
 
-quizText.Text = "Quiz "..quizLevel.."\n"..current.q
-
+quizText.Text = current.q
 A.Text = "A. "..current.a
 B.Text = "B. "..current.b
 C.Text = "C. "..current.c
+
+progress.Text = "Quiz "..quizLevel.." / 100"
 
 end
 
@@ -253,18 +304,10 @@ victory.Visible = true
 return
 end
 
-quizText.Text = "Correct! Force "..quizLevel
-task.wait(1)
-
 loadQuestion()
 
 else
 
-quizText.Text = "Wrong!"
-
-task.wait(1)
-
--- RESET SCORE
 score = 0
 streak = 0
 quizLevel = 1
@@ -282,7 +325,6 @@ A.MouseButton1Click:Connect(function() check("A") end)
 B.MouseButton1Click:Connect(function() check("B") end)
 C.MouseButton1Click:Connect(function() check("C") end)
 
--- START QUIZ
 quizBtn.MouseButton1Click:Connect(function()
 
 if quizOpen then return end
@@ -294,7 +336,7 @@ loadQuestion()
 
 end)
 
--- TITLE COLOR ANIMATION
+-- TITLE COLOR
 task.spawn(function()
 local hue = 0
 while true do
